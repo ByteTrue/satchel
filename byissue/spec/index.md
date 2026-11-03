@@ -1,12 +1,12 @@
 # Satchel Project Spec
 
-Satchel 是用户的 Skill + MCP 伞仓库；`skills/` 提供可移植 Agent Skills，其中的 satchel 二进制是独立的 Go 单二进制 MCP 产品：同一个命令提供用户配置和 stdio MCP Server，让 Agent 使用用户明确开放的外部能力。首版已交付；已实现行为以代码和测试为准，目标范围见 Epic 与 Vision。
+Satchel 是用户的 MCP 工具箱仓库，satchel 二进制是独立的 Go 单二进制 MCP 产品：同一个命令提供用户配置和 stdio MCP Server，让 Agent 使用用户明确开放的外部能力。首版已交付；已实现行为以代码和测试为准，目标范围见 Epic 与 Vision。
 
 ## 长期边界
 
 ### 独立而轻量
 
-- 仓库和发布独立于 `pi-package-mono`。satchel MCP 二进制不能要求 Pi 扩展、Node、Python、Magpie 进程或网络网关作为运行前提；`pi-vendor` 等 Skill 可显式依赖 Node/Pi。
+- 仓库和发布独立于 `pi-package-mono`。satchel MCP 二进制不能要求 Pi 扩展、Node、Python、Magpie 进程或网络网关作为运行前提。
 - 每个发布目标是独立可执行文件；使用纯 Go 依赖并支持交叉编译。
 - 首版只提供 stdio。常驻 daemon、监听端口、远程认证与远程文件语义不是隐含功能。
 
@@ -18,17 +18,22 @@ Satchel 是用户的 Skill + MCP 伞仓库；`skills/` 提供可移植 Agent Ski
 - 模型和 provider 只能由用户配置决定，Agent 工具参数不能自行切换路由或放大成本。
 - 关闭能力不删除其凭据和模型配置。
 
-### MCP 形态与 Skill 分发
+### MCP 形态
 
-- `satchel mcp` 是默认 unified 形态；`satchel mcp <vision|image|web-search>` 是 split 形态。两种形态共用配置与模块开关，不复制业务逻辑。
-- `satchel mcp-config [--unified|--split]` 只输出标准 `mcpServers` JSON，使用二进制绝对路径；`SATCHEL_CONFIG` 仅作为 env 路径透传，split 跳过关闭模块，不输出配置内容或密钥。
-- `skills/pi-vendor/` 必须自包含，脚本只引用 Skill 内部文件及明确声明的 Node/Pi 依赖；旧 npm 包目录与 `/vendor` TUI 不是 Skill 的运行前提。
+- stdio 只提供一个统一 MCP：`satchel mcp`。模块开关只改变统一工具面，不提供 split 模块命令或多入口聚合。
+- `satchel mcp-config` 只输出一个 `satchel` server 的标准 `mcpServers` JSON，使用二进制绝对路径；`SATCHEL_CONFIG` 仅作为 env 路径透传，不输出配置内容或密钥。
+
+### 安装与发布
+
+- GitHub Releases 是版本化二进制分发源；macOS/Linux 与 Windows 安装器只负责平台选择、下载、SHA-256 校验和用户目录安装，不静默修改 profile/PATH。
+- CI 使用同一批 release 资产在 Ubuntu/macOS/Windows 验证安装；损坏校验和必须拒绝安装。
+- 只有明确授权的 `v*` tag 才触发 release 发布；安装器开发验证不得借创建 release 完成。
 
 ### 不扩张成平台
 
 - 不做完整聊天模型网关、账号订阅体系、插件平台、路由组或自动附件改写。
 - 不复制 Magpie 的 UI、完整 provider 全局 registry、配额和账号体系来换取表面上的复用。
-- Pi 只是首个实测客户端；Satchel 不承接 Pi hooks 或 Pi 配置管理，独立的 `pi-vendor` Skill 由本仓库 `skills/pi-vendor/` 提供。
+- Pi 只是首个实测客户端；Satchel 不承接 Pi hooks、Pi `models.json` 管理或 `/vendor` TUI，后者由 pi-package-mono 的 small-extension 提供。
 
 ### 复用必须有来源与边界
 
@@ -52,5 +57,7 @@ Satchel 是用户的 Skill + MCP 伞仓库；`skills/` 提供可移植 Agent Ski
 - 产品目标与后续可能：`byissue/vision/`。
 - 首版目标方案：`byissue/epics/2026-11-01-x-首个可分发版本/spec.md`。
 - 当前 Magpie 三模块对齐与 CLI 管理：`byissue/epics/2026-11-02-x-对齐Magpie三模块/spec.md`。
-- Satchel 技能仓库、vendor Skill 与 unified/split MCP：`byissue/epics/2026-11-03-x-Satchel技能仓库与MCP形态/spec.md`。
+
+- 当前 stdio 统一 MCP：`byissue/epics/2026-11-03-x-收敛stdio为统一MCP/spec.md`。
+- 安装与发布分发：`byissue/epics/2026-11-03-x-补齐安装与发布分发/spec.md`。
 - 具体实现与验证证据：对应 Epic 下的 `issues/`。

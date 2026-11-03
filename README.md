@@ -1,6 +1,6 @@
 # Satchel
 
-A personal Skill + MCP repository for AI agents.
+A portable MCP toolbox for AI agents.
 
 The **satchel** binary is the repository's Go MCP component: the three Magpie capability MCPs—Vision, Image, and Web Search—extracted into one independent Go binary. It provides interactive configuration and a stdio MCP server without a daemon, external runtime, or Magpie provider registry.
 
@@ -9,28 +9,56 @@ The **satchel** binary is the repository's Go MCP component: the three Magpie ca
 ## Repository layout
 
 - `cmd/`、`internal/` — Satchel CLI and MCP implementation.
-- `skills/pi-vendor/` — portable Pi provider/model management Skill and bundled Node scripts.
 - `byissue/` — product vision, specs, Epics, and implementation evidence.
 
-## pi-vendor Skill
+Pi-specific `/vendor` provider/model management is maintained as a small extension in [pi-package-mono](https://github.com/ByteTrue/pi-package-mono/tree/main/small-extensions/pi-vendor), not in Satchel.
 
-The Skill manages Pi `models.json` with normal read/edit tools plus its bundled `vendor.mjs` queries. It is self-contained; it does not require the old npm package or a `/vendor` extension.
+## Install Satchel
 
-Register the local directory in Pi's `skills` settings:
+After a versioned GitHub Release is published, use the installer for your platform. It detects the OS/architecture, verifies the archive against `SHA256SUMS`, and installs the binary.
 
-```json
-{
-  "skills": ["/absolute/path/to/satchel/skills/pi-vendor"]
-}
-```
-
-Example bundled query:
+### macOS / Linux
 
 ```bash
-node skills/pi-vendor/scripts/vendor.mjs catalog 'kimi' 3
+curl -fsSL https://raw.githubusercontent.com/ByteTrue/satchel/main/scripts/install.sh | bash
 ```
 
-## Build
+Install a specific version or into a different directory:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ByteTrue/satchel/main/scripts/install.sh | SATCHEL_VERSION=v0.1.0 bash
+curl -fsSL https://raw.githubusercontent.com/ByteTrue/satchel/main/scripts/install.sh | SATCHEL_INSTALL_DIR="$HOME/.local/bin" bash
+```
+
+Default install location: `~/.local/bin/satchel`. If needed, add that directory to your shell's PATH; the installer prints the exact command.
+
+### Windows
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/ByteTrue/satchel/main/scripts/install.ps1 | iex"
+```
+
+For a specific version:
+
+```powershell
+$env:SATCHEL_VERSION = 'v0.1.0'
+irm https://raw.githubusercontent.com/ByteTrue/satchel/main/scripts/install.ps1 | iex
+```
+
+Default install location: `$LOCALAPPDATA\Programs\Satchel\satchel.exe`. The installer prints a user-PATH command when needed; open a new terminal after changing PATH.
+
+### First run, upgrade, uninstall
+
+```bash
+satchel setup
+satchel mcp-config
+```
+
+Upgrade by rerunning the installer with the desired `SATCHEL_VERSION`. Uninstall by deleting `~/.local/bin/satchel` on macOS/Linux or `$LOCALAPPDATA\Programs\Satchel` on Windows. Configuration is kept separately under the OS user config directory; it is not deleted automatically.
+
+The installer does not modify shell profiles or system PATH. Homebrew/Scoop packages and automatic updates are not currently included.
+
+## Build from source
 
 ```bash
 go build -o satchel ./cmd/satchel
@@ -64,25 +92,16 @@ pi mcp list
 
 If `SATCHEL_CONFIG` is needed, add it under the entry's `env` object. Avoid registering another extension that exposes the same direct tool names.
 
-### Unified or split MCP
+### One stdio MCP and copyable JSON
 
-Unified mode is the default:
+Satchel exposes exactly one unified stdio MCP. The CLI module switches below control which tools appear inside it; there are no split module commands.
 
 ```bash
 satchel mcp
 satchel mcp-config
 ```
 
-Split mode runs the three modules as independent MCP servers:
-
-```bash
-satchel mcp vision
-satchel mcp image
-satchel mcp web-search
-satchel mcp-config --split
-```
-
-`mcp-config` writes only a copyable `mcpServers` JSON document to stdout. It uses the binary's absolute path and includes `SATCHEL_CONFIG` under `env` when set. Split output contains only currently enabled modules, named `satchel-vision`, `satchel-image`, and `satchel-web-search`.
+`mcp-config` writes only a copyable `mcpServers` JSON document containing one `satchel` entry. It uses the binary's absolute path and includes `SATCHEL_CONFIG` under `env` when set.
 
 ## Modules and tools
 
@@ -127,7 +146,6 @@ Changes persist atomically and take effect after restarting the MCP process. MCP
 go test ./...
 go vet ./...
 go test -race ./...
-./scripts/test-skills.sh
 ```
 
 Default tests use local fake providers and need no credentials. The stdio integration tests build and start the real binary through the official MCP client.
@@ -138,7 +156,7 @@ Build six platform archives with dependency notices and SHA-256 checksums:
 ./scripts/build-release.sh 0.1.0
 ```
 
-Artifacts go to `dist/`; this does not tag or publish a release.
+Artifacts go to `dist/`; this does not tag or publish a release. After maintainer authorization, pushing a `v*` tag runs `release.yml`, reruns tests, and publishes the six archives and checksums to GitHub Releases.
 
 ## Acknowledgements
 

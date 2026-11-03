@@ -15,30 +15,13 @@ import (
 	"satchel/internal/mcpserver"
 )
 
-func RunMCP(ctx context.Context, only string) error {
+func RunMCP(ctx context.Context) error {
 	cfg, err := config.Load()
 	if err != nil {
 		return err
 	}
-	modules := currentModules(cfg)
-	if only != "" {
-		module := mcpserver.Module(only)
-		enabled := modules.Enabled(module)
-		if module != mcpserver.ModuleVision && module != mcpserver.ModuleImage && module != mcpserver.ModuleWebSearch {
-			return errors.New("mcp module must be vision, image, or web-search")
-		}
-		modules = mcpserver.ModuleState{}
-		switch module {
-		case mcpserver.ModuleVision:
-			modules.Vision = enabled
-		case mcpserver.ModuleImage:
-			modules.Image = enabled
-		case mcpserver.ModuleWebSearch:
-			modules.WebSearch = enabled
-		}
-	}
 	server := mcpserver.New(mcpserver.Options{
-		Modules:        modules,
+		Modules:        currentModules(cfg),
 		AnalyzeImage:   analyzeImage,
 		Generate:       generateImage,
 		GenerateVideo:  generateVideo,

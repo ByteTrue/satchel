@@ -17,6 +17,8 @@ func TestRunVersionHelpAndErrors(t *testing.T) {
 		{args: []string{"version"}, want: "satchel " + Version},
 		{args: []string{"unknown"}, wantCode: 2, want: "unknown command"},
 		{args: []string{"config"}, wantCode: 2, want: "satchel config show"},
+		{args: []string{"mcp", "vision"}, wantCode: 2, want: "mcp takes no arguments"},
+		{args: []string{"mcp-config", "--split"}, wantCode: 1, want: "mcp-config takes no arguments"},
 	} {
 		var out, errOut bytes.Buffer
 		if code := Run(context.Background(), tc.args, nil, &out, &errOut); code != tc.wantCode {

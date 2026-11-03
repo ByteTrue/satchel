@@ -18,11 +18,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Test skills
-        run: ./scripts/test-skills.sh
       - name: Check formatting
         run: test -z "$(gofmt -l .)"
       - name: Test
@@ -33,6 +28,8 @@ jobs:
         run: go test -race -count=1 ./...
       - name: Build release matrix
         run: ./scripts/build-release.sh ci
+      - name: Test installer success and checksum rejection
+        run: ./scripts/test-installer.sh dist ci
       - uses: actions/upload-artifact@v4
         with:
           name: satchel-ci
@@ -40,3 +37,49 @@ jobs:
             dist/satchel_*
             dist/SHA256SUMS
           if-no-files-found: error
+
+  installer-test:
+    needs: test
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: satchel-ci
+          path: dist
+      - name: Test Unix installer
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          SATCHEL_DOWNLOAD_BASE: file://${{ github.workspace }}/dist
+          SATCHEL_INSTALL_DIR: ${{ github.workspace }}/.local/bin
+        run: ./scripts/install.sh
+      - name: Test Windows PowerShell 5.1 installer
+        if: runner.os == 'Windows'
+        shell: powershell
+        env:
+          SATCHEL_DOWNLOAD_BASE: ${{ github.workspace }}/dist
+          SATCHEL_INSTALL_DIR: ${{ github.workspace }}/.local/bin
+        run: ./scripts/install.ps1
+      - name: Test Windows checksum rejection
+        if: runner.os == 'Windows'
+        shell: powershell
+        env:
+          SATCHEL_DOWNLOAD_BASE: ${{ github.workspace }}/dist
+        run: |
+          $bad = Join-Path $env:RUNNER_TEMP 'satchel-corrupt-release'
+          Copy-Item -Path $env:SATCHEL_DOWNLOAD_BASE -Destination $bad -Recurse
+          $checksums = Join-Path $bad 'SHA256SUMS'
+          $lines = Get-Content $checksums | ForEach-Object {
+            if ($_ -match '^[0-9a-fA-F]{64}') { ('0' * 64) + $_.Substring(64) } else { $_ }
+          }
+          Set-Content -Path $checksums -Value $lines
+          $env:SATCHEL_DOWNLOAD_BASE = $bad
+          $env:SATCHEL_INSTALL_DIR = Join-Path $env:RUNNER_TEMP 'satchel-bad-bin'
+          $failed = $false
+          try { & ./scripts/install.ps1 } catch { $failed = $true }
+          if (-not $failed) { throw 'Corrupted checksum unexpectedly installed' }
+          if (Test-Path (Join-Path $env:SATCHEL_INSTALL_DIR 'satchel.exe')) { throw 'Binary exists after checksum rejection' }

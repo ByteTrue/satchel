@@ -1,6 +1,6 @@
 # Satchel Vision
 
-Satchel 是用户的 Skill + MCP 伞仓库，其中的 satchel 二进制是能随 Agent 带走的通用工具箱：用户配置一次模型、搜索服务与工具开关，支持 MCP 的客户端就能按需使用这些能力。名字取“随身小挎包”之意，不绑定 Pi、某个模型供应商或某一种工具。
+Satchel 是用户的 MCP 工具箱仓库，其中的 satchel 二进制是能随 Agent 带走的通用工具箱：用户配置一次模型、搜索服务与工具开关，支持 MCP 的客户端就能按需使用这些能力。名字取“随身小挎包”之意，不绑定 Pi、某个模型供应商或某一种工具。
 
 ## 用户得到什么
 
@@ -36,4 +36,4 @@ Satchel 是用户的 Skill + MCP 伞仓库，其中的 satchel 二进制是能�
 
 首版明确不追求完整模型网关、自动附件钩子、Pi 专属模型管理或远程共享。视频属于 Image 模块，账号订阅型视频 provider 不作为独立平台能力复制。
 
-当前已对齐 Magpie 的 Vision、Image、Web Search 三模块工具面与 CLI 管理，见 [对齐 Magpie 三模块 Epic](../epics/2026-11-02-x-对齐Magpie三模块/spec.md)；vendor Skill 与 unified/split MCP 形态见 [Satchel 技能仓库与 MCP 形态 Epic](../epics/2026-11-03-x-Satchel技能仓库与MCP形态/spec.md)。未来是否增加 HTTP 和更多客户端自动安装，仍属于后续候选。
+当前已对齐 Magpie 的 Vision、Image、Web Search 三模块工具面与 CLI 管理，见 [对齐 Magpie 三模块 Epic](../epics/2026-11-02-x-对齐Magpie三模块/spec.md)；当前 stdio 统一 MCP 见 [收敛 stdio 为统一 MCP Epic](../epics/2026-11-03-x-收敛stdio为统一MCP/spec.md)。未来是否增加 HTTP 和更多客户端自动安装，仍属于后续候选。

@@ -31,14 +31,10 @@ func Run(ctx context.Context, args []string, in *os.File, out, errOut io.Writer)
 	case "modules":
 		err = RunModules(args[1:], out)
 	case "mcp":
-		if len(args) <= 2 {
-			only := ""
-			if len(args) == 2 {
-				only = args[1]
-			}
-			err = RunMCP(ctx, only)
+		if len(args) == 1 {
+			err = RunMCP(ctx)
 		} else {
-			return usageError(errOut, "usage: satchel mcp [vision|image|web-search]")
+			return usageError(errOut, "mcp takes no arguments")
 		}
 	case "mcp-config":
 		err = RunMCPConfig(args[1:], out)
@@ -65,8 +61,8 @@ Usage:
   satchel setup        Configure providers and tool access
   satchel modules      List modules, or set: modules <module> <on|off>
   satchel config show  Show the redacted configuration
-  satchel mcp          Run unified MCP, or: mcp <vision|image|web-search>
-  satchel mcp-config   Print MCP JSON: mcp-config [--unified|--split]
+  satchel mcp          Run the unified stdio MCP server
+  satchel mcp-config   Print the single-server MCP JSON
   satchel version      Print the version`)
 }
 

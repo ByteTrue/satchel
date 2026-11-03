@@ -6,9 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-
-	"satchel/internal/config"
-	"satchel/internal/mcpserver"
 )
 
 type mcpConfigEntry struct {
@@ -18,22 +15,8 @@ type mcpConfigEntry struct {
 }
 
 func RunMCPConfig(args []string, out io.Writer) error {
-	split := false
-	if len(args) > 1 {
-		return errors.New("usage: satchel mcp-config [--unified|--split]")
-	}
-	if len(args) == 1 {
-		switch args[0] {
-		case "--split":
-			split = true
-		case "--unified":
-		default:
-			return errors.New("usage: satchel mcp-config [--unified|--split]")
-		}
-	}
-	cfg, err := config.Load()
-	if err != nil {
-		return err
+	if len(args) != 0 {
+		return errors.New("mcp-config takes no arguments")
 	}
 	executable, err := os.Executable()
 	if err != nil {
@@ -47,32 +30,17 @@ func RunMCPConfig(args []string, out io.Writer) error {
 	if path := os.Getenv("SATCHEL_CONFIG"); path != "" {
 		env["SATCHEL_CONFIG"] = path
 	}
-	return writeMCPConfig(out, split, executable, currentModules(cfg), env)
+	return writeMCPConfig(out, executable, env)
 }
 
-func writeMCPConfig(out io.Writer, split bool, executable string, modules mcpserver.ModuleState, env map[string]string) error {
-	servers := make(map[string]mcpConfigEntry)
-	entry := func(args ...string) mcpConfigEntry {
-		return mcpConfigEntry{Command: executable, Args: args, Env: env}
-	}
-	if !split {
-		servers["satchel"] = entry("mcp")
-	} else {
-		for _, item := range []struct {
-			module mcpserver.Module
-			name   string
-		}{
-			{module: mcpserver.ModuleVision, name: "satchel-vision"},
-			{module: mcpserver.ModuleImage, name: "satchel-image"},
-			{module: mcpserver.ModuleWebSearch, name: "satchel-web-search"},
-		} {
-			if modules.Enabled(item.module) {
-				servers[item.name] = entry("mcp", string(item.module))
-			}
-		}
+func writeMCPConfig(out io.Writer, executable string, env map[string]string) error {
+	document := map[string]any{
+		"mcpServers": map[string]mcpConfigEntry{
+			"satchel": {Command: executable, Args: []string{"mcp"}, Env: env},
+		},
 	}
 	encoder := json.NewEncoder(out)
 	encoder.SetEscapeHTML(false)
 	encoder.SetIndent("", "  ")
-	return encoder.Encode(map[string]any{"mcpServers": servers})
+	return encoder.Encode(document)
 }

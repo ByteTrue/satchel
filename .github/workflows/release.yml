@@ -1,0 +1,32 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Test
+        run: go test -count=1 ./...
+      - name: Vet
+        run: go vet ./...
+      - name: Build release matrix
+        shell: bash
+        run: ./scripts/build-release.sh "${GITHUB_REF_NAME#v}"
+      - name: Test installer success and checksum rejection
+        run: ./scripts/test-installer.sh dist "${GITHUB_REF_NAME#v}"
+      - name: Publish GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/satchel_* dist/SHA256SUMS --title "Satchel ${GITHUB_REF_NAME#v}" --generate-notes
